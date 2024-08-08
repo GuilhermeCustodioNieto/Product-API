@@ -3,6 +3,10 @@ package com.example.springboot.controllers;
 import com.example.springboot.dtos.ProductRecordDto;
 import com.example.springboot.models.ProductModel;
 import com.example.springboot.repositories.ProductRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,17 +22,27 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
+@RequestMapping(value = "products-api", produces = {"application/json"})
+@Tag(name = "products-api")
 public class ProductController {
     @Autowired
     ProductRepository productRepository;
 
-    @PostMapping("/products")
+    @Operation(summary = "Realiza a criação de novos produtos", method = "POST")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Upload de arquivo realizado com sucesso")
+    })
+    @PostMapping(name = "/products")
     public ResponseEntity<ProductModel> saveProduct(@RequestBody @Valid ProductRecordDto productRecordDto){
         var productModel = new ProductModel();
         BeanUtils.copyProperties(productRecordDto, productModel);
         return ResponseEntity.status(HttpStatus.CREATED).body(productRepository.save(productModel));
     }
 
+    @Operation(summary = "Retorna todos os produtos cadastrados, se existir algum", method = "GET")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Produtos encontrados com sucesso")
+    })
     @GetMapping("/products")
     public ResponseEntity<List<ProductModel>> getAllProducts(){
         List<ProductModel> productsList = productRepository.findAll();
@@ -44,6 +58,11 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.OK).body(productsList);
     }
 
+    @Operation(summary = "Retorna um produto através de seu ID", method = "GET")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Produto encontrado com sucesso!"),
+
+    })
     @GetMapping("/products/{id}")
     public ResponseEntity<Object> getOneProduct(@PathVariable(value = "id") UUID id){
         Optional<ProductModel> productO = productRepository.findById(id);
@@ -56,6 +75,11 @@ public class ProductController {
         return ResponseEntity.status((HttpStatus.OK)).body(productO.get());
     }
 
+    @Operation(summary = "Recebe um json com os dados do produto a ser editado", method = "POST")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Produto editado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Produto não encontrado"),
+    })
     @PutMapping("/products/{id}")
     public ResponseEntity<Object> updateProduct(@PathVariable(value="id") UUID id,
                                                 @RequestBody @Valid ProductRecordDto productRecordDto){
@@ -70,6 +94,11 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.OK).body(productRepository.save(productModel));
     }
 
+    @Operation(summary = "Deleta um produto com base no seu id", method = "DELETE")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Produto deletado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Produto não encontrado"),
+    })
     @DeleteMapping("/products/{id}")
     public ResponseEntity<Object> deleteProduct(@PathVariable(value = "id") UUID id){
         Optional<ProductModel> productO = productRepository.findById(id);
